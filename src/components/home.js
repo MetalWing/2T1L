@@ -1,18 +1,26 @@
-import React, { useState } from "react";
-import { useHistory } from "react-router-dom";
+import React, { useState } from 'react';
+import { useHistory } from 'react-router-dom';
 
 import { Button, Grid, Container, TextField } from '@material-ui/core';
 import InputAdornment from '@material-ui/core/InputAdornment';
-import Fade from '@material-ui/core/Fade';
 
 
 import PersonIcon from '@material-ui/icons/Person';
 import PeopleIcon from '@material-ui/icons/People';
 import HelpIcon from '@material-ui/icons/Help';
 
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import Switch from '@material-ui/core/Switch';
+import { makeStyles } from '@material-ui/core/styles';
 
+const useStyles = makeStyles((theme) => ({
+    input1: {
+        height: 48,
+        fontSize: 'xxx-large',
+        color: theme.palette.primary.main
+      },
+    specialOutline: {
+        borderColor: theme.palette.primary.main,
+    }
+  }));
 
 export default function Home()  {
     const [join, joinClicked] = useState(false);
@@ -20,55 +28,67 @@ export default function Home()  {
     const routeChange = (newPath) =>{
         history.push(newPath);
     }
-    const [checked, setChecked] = React.useState(false);
 
     const handleJoinClicked = () => {
       joinClicked((prev) => !prev);
     };
+
+    const classes = useStyles();
+
     return (
-        <Container maxWidth="md">
+        <Container maxWidth='md'>
                 <Grid 
                 container
                 spacing={1}
-                alignItems="center"
-                direction="column"
-                justify="center"
+                alignItems='center'
+                direction='column'
+                justify='center'
                 style={{ minHeight: '100vh', flexWrap: 'nowrap' }}>
-                    <Grid item xs={12} style={{width: "100%"}}>
+                    <Grid item xs={12} style={{width: '100%'}}>
                         <Button 
-                        color="primary" 
+                        color='primary' 
                         fullWidth={true} 
-                        variant="outlined"
+                        variant='outlined'
                         onClick={() => routeChange('lobby')}>
                             <Grid>
                                 <PersonIcon style={{ fontSize: 40 }} /><br />Host
                             </Grid>
                         </Button>
                     </Grid>
-                    <Grid item xs={12} style={{width: "100%"}}>
+                    <Grid item xs={12} style={{width: '100%'}}>
                         {!join && <Button
-                        color="primary" 
+                        color='primary' 
                         fullWidth={true}
-                        variant="outlined"
+                        variant='outlined'
                         onClick={handleJoinClicked}>
                             <Grid>
                                 <PeopleIcon style={{ fontSize: 40 }} /><br />Join
                             </Grid>
                         </Button>}
-                        <Fade in={join} timeout={{ enter: 1000 }} unmountOnExit>
-                        <TextField id="outlined-basic" variant="outlined" fullWidth={true} InputProps={{
+                        {join &&
+                        <TextField color='primary' type='text' variant='outlined' fullWidth={true} 
+                            InputProps={{
+                            placeholder: 'Enter room code',
                             startAdornment: (
-                              <InputAdornment position="start">
-                                <PeopleIcon style={{ fontSize: 40 }} />
+                              <InputAdornment position='start'>
+                                <PeopleIcon color='primary'  style={{ fontSize: 40 }} />
                               </InputAdornment>
-                            )
-                          }} /></Fade>
+                            ),
+                            classes: { 
+                                input: classes.input1,
+                                notchedOutline: classes.specialOutline,
+                                focused: classes.specialOutline
+                            }
+                          }}
+                          inputProps={{
+                            maxLength: 4
+                          }} />}
                     </Grid>
-                    <Grid item xs={12} style={{width: "100%"}}>
+                    <Grid item xs={12} style={{width: '100%'}}>
                         <Button 
-                        color="primary" 
+                        color='primary' 
                         fullWidth={true} 
-                        variant="outlined" 
+                        variant='outlined' 
                         onClick={() => routeChange('help')}>
                             <Grid>
                                 <HelpIcon style={{ fontSize: 40 }} /><br />Help
@@ -78,8 +98,4 @@ export default function Home()  {
                 </Grid>
         </Container>
     );
-}
-
-function showRoomCodePrompt() {
-    console.log('%c ayy lmao', 'color: hotpink');
 }

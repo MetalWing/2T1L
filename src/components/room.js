@@ -22,7 +22,7 @@ const useStyles = makeStyles((theme) => ({
     }
   }));
 
-export default function Home()  {
+export default function Room()  {
     const [join, joinClicked] = useState(false);
 
     const roomCodeInputRef = useRef();

@@ -7,6 +7,7 @@ import {
 
 import Lobby from './components/lobby';
 import Home from './components/home';
+import Room from './components/room';
 
 export default function BasicExample() {
   return (
@@ -17,6 +18,9 @@ export default function BasicExample() {
           </Route>
           <Route path="/lobby">
             <Lobby />
+          </Route>
+          <Route path="/room">
+            <Room />
           </Route>
         </Switch>
     </Router>

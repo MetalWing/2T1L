@@ -1,6 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 
+import { db } from "../services/firebase";
+import md5 from 'md5'
+
 import { Grid, Container, TextField, Button } from '@material-ui/core';
 
 import Switch from '@material-ui/core/Switch';
@@ -62,13 +65,42 @@ export default function Lobby()  {
     };
 
     
-    const validateAndGo = () => {
+    const validateAndGo = (event) => {
       setStartClicked(true);
       let nameInput = (nameInputRef.current.value !== '');
       let input1 = (statementOneInputRef.current?.value !== '');
       let input2 = (statementTwoInputRef.current?.value !== '');
       let input3 = (statementThreeInputRef.current?.value !=='');
-      if (nameInput && ((input1 && input2 && input3) || hostOnly)) routeChange('room');
+      if (nameInput && ((input1 && input2 && input3) || hostOnly)) {
+        handleSubmit(event);
+        //routeChange('room');
+      }
+    }
+
+    const handleSubmit = async(event) => {
+      event.preventDefault();
+      try {
+        var key = '';
+        await db.ref('rooms').push({
+          roomName: 'Test-ish',
+          hostName: name,
+          timestamp: Date.now()
+        }).then((snapshot) => {
+          // Generate MD5 then convert to hex and get the first 2 bytes
+          // Store the 2 bytes back in the object
+          key = snapshot.key;
+          // var roomCode = (md5(snapshot.key)).toString(16).substring(0, 4).toUpperCase();
+          // console.log("md5", roomCode);
+        });
+        console.log('key', key);
+        var roomCode = (md5(key)).toString(16).substring(0, 4).toUpperCase();
+        console.log("room Code", roomCode);
+        await db.ref('rooms/'+ key).update({
+          roomCode: roomCode,
+        });
+      } catch (error) {
+        console.log('welp...',error.message);
+      }
     }
 
     const classes = useStyles();

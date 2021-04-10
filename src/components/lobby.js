@@ -79,18 +79,30 @@ export default function Lobby()  {
 
     const handleSubmit = async(event) => {
       event.preventDefault();
+
+      // Host
+      var playerObject = {
+        [name] : { 
+          lie: statementThreeInput,
+          truth1:statementOneInput,
+          truth2:statementTwoInput}};
+
+      var roomObject = {
+        roomName: 'get this from textfield',
+        hostName: name,
+        timestamp: Date.now(),
+        players:  []
+      };
+
+      if (!hostOnly)
+      {
+        roomObject.players.push(playerObject);
+      }
+
       try {
         var key = '';
-        await db.ref('rooms').push({
-          roomName: 'Test-ish',
-          hostName: name,
-          timestamp: Date.now()
-        }).then((snapshot) => {
-          // Generate MD5 then convert to hex and get the first 2 bytes
-          // Store the 2 bytes back in the object
+        await db.ref('rooms').push(roomObject).then((snapshot) => {
           key = snapshot.key;
-          // var roomCode = (md5(snapshot.key)).toString(16).substring(0, 4).toUpperCase();
-          // console.log("md5", roomCode);
         });
         console.log('key', key);
         var roomCode = (md5(key)).toString(16).substring(0, 4).toUpperCase();
@@ -98,6 +110,7 @@ export default function Lobby()  {
         await db.ref('rooms/'+ key).update({
           roomCode: roomCode,
         });
+        
       } catch (error) {
         console.log('welp...',error.message);
       }

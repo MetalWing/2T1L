@@ -72,8 +72,9 @@ export default function Lobby()  {
       let input2 = (statementTwoInputRef.current?.value !== '');
       let input3 = (statementThreeInputRef.current?.value !=='');
       if (nameInput && ((input1 && input2 && input3) || hostOnly)) {
-        handleSubmit(event);
-        //routeChange('room');
+        handleSubmit(event).then((roomCode) => {
+          routeChange('room?code=' + roomCode);
+        });
       }
     }
 
@@ -104,9 +105,7 @@ export default function Lobby()  {
         await db.ref('rooms').push(roomObject).then((snapshot) => {
           key = snapshot.key;
         });
-        console.log('key', key);
         var roomCode = (md5(key)).toString(16).substring(0, 4).toUpperCase();
-        console.log("room Code", roomCode);
         await db.ref('rooms/'+ key).update({
           roomCode: roomCode,
         });
@@ -114,6 +113,7 @@ export default function Lobby()  {
       } catch (error) {
         console.log('welp...',error.message);
       }
+      return roomCode;
     }
 
     const classes = useStyles();

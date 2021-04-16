@@ -1,13 +1,11 @@
-import React, { useState, useRef } from 'react';
-import { useHistory } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { useHistory, useLocation } from 'react-router-dom';
 
-import { Button, Grid, Container, TextField } from '@material-ui/core';
-import InputAdornment from '@material-ui/core/InputAdornment';
+import { Grid, Container } from '@material-ui/core';
+import Avatar from '@material-ui/core/Avatar';
 
 
-import PersonIcon from '@material-ui/icons/Person';
-import PeopleIcon from '@material-ui/icons/People';
-import HelpIcon from '@material-ui/icons/Help';
+import { db } from "../services/firebase";
 
 import { makeStyles } from '@material-ui/core/styles';
 
@@ -22,30 +20,46 @@ const useStyles = makeStyles((theme) => ({
     }
   }));
 
-export default function Room()  {
-    const [join, joinClicked] = useState(false);
+  function useQuery() {
+    return new URLSearchParams(useLocation().search);
+  }
 
-    const roomCodeInputRef = useRef();
+export default function Room()  {
+    let query = useQuery();
+
+    const [fullRoomCode, setFullRoomCode] = useState('');
+    const [roomName, setRoomName] = useState('');
+    const [players, setPlayers] = useState([]);
+    const [roomObj, setRoomObj] = useState();
 
     const history = useHistory();
     const routeChange = (newPath) =>{
         history.push(newPath);
     }
 
-    const handleJoinClicked = () => {
-      joinClicked((prev) => !prev);
-    };
+    const roomCode = query.get('code');
 
-    const roomCodeInputChanged = () => {
-        let code = roomCodeInputRef.current.value;
-        if (code.length === 4)
-        {
-            // Disable the textfield and try to connect to the room
-        }
-      };
+    useEffect(() => {
+        try {
+          var rooms = db.ref('rooms');
+            var room = rooms.orderByChild("roomCode").equalTo(roomCode).once("child_added", function(snapshot) {
+                setFullRoomCode(snapshot.key);
+                setRoomName(snapshot.val().roomName);
+                setRoomObj(snapshot.val());
+              });
+          } catch (error) {
+              console.log('Whoops?');
+          }
+      }, []);
 
-    const classes = useStyles();
+      const generatePlayerAvatars = () =>{
+        return roomObj?.players.map((player) => {
+          let playerName = Object.keys(player)[0];
+          return <span>{playerName}</span>
+        });
+      }
 
+      console.log(roomObj);
     return (
         <Container maxWidth='md'>
                 <Grid 
@@ -55,61 +69,17 @@ export default function Room()  {
                 direction='column'
                 justify='center'
                 style={{ minHeight: '100vh', flexWrap: 'nowrap' }}>
-                    <Grid item xs={12} style={{width: '100%'}}>
-                        <Button 
-                        color='primary' 
-                        fullWidth={true} 
-                        variant='outlined'
-                        onClick={() => routeChange('lobby')}>
-                            <Grid>
-                                <PersonIcon style={{ fontSize: 40 }} /><br />Host
-                            </Grid>
-                        </Button>
+                  <Grid container spacing={1} style={{width: '100%'}}>
+                    <Grid item xs={10}>
+                      <h4>Room name: {roomName}</h4>
                     </Grid>
-                    <Grid item xs={12} style={{width: '100%'}}>
-                        {!join && <Button
-                        color='primary' 
-                        fullWidth={true}
-                        variant='outlined'
-                        onClick={handleJoinClicked}>
-                            <Grid>
-                                <PeopleIcon style={{ fontSize: 40 }} /><br />Join
-                            </Grid>
-                        </Button>}
-                        {join &&
-                        <TextField inputRef={roomCodeInputRef}
-                            onChange={roomCodeInputChanged}
-                            color='primary' 
-                            type='text' 
-                            variant='outlined' 
-                            fullWidth={true} 
-                            InputProps={{
-                            placeholder: 'Enter room code',
-                            startAdornment: (
-                              <InputAdornment position='start'>
-                                <PeopleIcon color='primary'  style={{ fontSize: 40 }} />
-                              </InputAdornment>
-                            ),
-                            classes: { 
-                                input: classes.input1,
-                                notchedOutline: classes.specialOutline,
-                                focused: classes.specialOutline
-                            }
-                          }}
-                          inputProps={{
-                            maxLength: 4
-                          }} />}
+                    <Grid item xs={2}>
+                      <h4>Code: {roomCode}</h4>
                     </Grid>
-                    <Grid item xs={12} style={{width: '100%'}}>
-                        <Button 
-                        color='primary' 
-                        fullWidth={true} 
-                        variant='outlined' 
-                        onClick={() => routeChange('help')}>
-                            <Grid>
-                                <HelpIcon style={{ fontSize: 40 }} /><br />Help
-                            </Grid>
-                        </Button>
+                    <Grid item sm={12}>
+                      <h5>Players</h5>
+                      {generatePlayerAvatars()}
+                    </Grid>
                     </Grid>
                 </Grid>
         </Container>

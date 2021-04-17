@@ -73,6 +73,7 @@ export default function Lobby()  {
       let input3 = (statementThreeInputRef.current?.value !=='');
       if (nameInput && ((input1 && input2 && input3) || hostOnly)) {
         handleSubmit(event).then((roomCode) => {
+          localStorage.setItem("playerName", name);
           routeChange('room?code=' + roomCode);
         });
       }

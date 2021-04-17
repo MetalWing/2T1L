@@ -8,6 +8,7 @@ import Avatar from '@material-ui/core/Avatar';
 import { db } from "../services/firebase";
 
 import { makeStyles } from '@material-ui/core/styles';
+import RegisterPlayer from './reusable/registerPlayer';
 
 const useStyles = makeStyles((theme) => ({
     input1: {
@@ -31,6 +32,7 @@ export default function Room()  {
     const [roomName, setRoomName] = useState('');
     const [players, setPlayers] = useState([]);
     const [roomObj, setRoomObj] = useState();
+    const [playerName, setPlayerName] = useState('');
 
     const history = useHistory();
     const routeChange = (newPath) =>{
@@ -39,7 +41,21 @@ export default function Room()  {
 
     const roomCode = query.get('code');
 
+    window.addEventListener("storage",(function(e){
+      console.log("IT CHANGED");
+   }).bind(this));
+
     useEffect(() => {
+      setPlayerName(localStorage.getItem('playerName'));
+      console.log("player name", playerName)
+      if (playerName)
+      {
+        console.log("stuff happened");
+        getRoomInfo();
+      }
+    }, []);
+
+      const getRoomInfo = () => {
         try {
           var rooms = db.ref('rooms');
             var room = rooms.orderByChild("roomCode").equalTo(roomCode).once("child_added", function(snapshot) {
@@ -50,7 +66,7 @@ export default function Room()  {
           } catch (error) {
               console.log('Whoops?');
           }
-      }, []);
+      }
 
       const generatePlayerAvatars = () =>{
         return roomObj?.players.map((player) => {
@@ -60,28 +76,30 @@ export default function Room()  {
       }
 
       console.log(roomObj);
-    return (
-        <Container maxWidth='md'>
-                <Grid 
-                container
-                spacing={1}
-                alignItems='center'
-                direction='column'
-                justify='center'
-                style={{ minHeight: '100vh', flexWrap: 'nowrap' }}>
-                  <Grid container spacing={1} style={{width: '100%'}}>
-                    <Grid item xs={10}>
-                      <h4>Room name: {roomName}</h4>
-                    </Grid>
-                    <Grid item xs={2}>
-                      <h4>Code: {roomCode}</h4>
-                    </Grid>
-                    <Grid item sm={12}>
-                      <h5>Players</h5>
-                      {generatePlayerAvatars()}
-                    </Grid>
-                    </Grid>
-                </Grid>
-        </Container>
-    );
+      console.log("REEEEE");
+      var content = (playerName) ?
+      <Container maxWidth='md'>
+              <Grid 
+              container
+              spacing={1}
+              alignItems='center'
+              direction='column'
+              justify='center'
+              style={{ minHeight: '100vh', flexWrap: 'nowrap' }}>
+                <Grid container spacing={1} style={{width: '100%'}}>
+                  <Grid item xs={10}>
+                    <h4>Room name: {roomName}</h4>
+                  </Grid>
+                  <Grid item xs={2}>
+                    <h4>Code: {roomCode}</h4>
+                  </Grid>
+                  <Grid item sm={12}>
+                    <h5>Players</h5>
+                    {generatePlayerAvatars()}
+                  </Grid>
+                  </Grid>
+              </Grid>
+      </Container> : <RegisterPlayer />
+      console.log(content);
+    return content;
 }

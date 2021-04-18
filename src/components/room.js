@@ -45,12 +45,17 @@ export default function Room()  {
       console.log("IT CHANGED");
    }).bind(this));
 
+   const registerPlayer = (p) => {
+      console.log("Register player in room.js", p);
+      localStorage.setItem('playerName', p)
+      window.dispatchEvent( new Event('storage') )
+   };
+
     useEffect(() => {
       setPlayerName(localStorage.getItem('playerName'));
       console.log("player name", playerName)
       if (playerName)
       {
-        console.log("stuff happened");
         getRoomInfo();
       }
     }, []);
@@ -76,7 +81,6 @@ export default function Room()  {
       }
 
       console.log(roomObj);
-      console.log("REEEEE");
       var content = (playerName) ?
       <Container maxWidth='md'>
               <Grid 
@@ -99,7 +103,7 @@ export default function Room()  {
                   </Grid>
                   </Grid>
               </Grid>
-      </Container> : <RegisterPlayer />
+      </Container> : <RegisterPlayer handleRegisterPlayer={registerPlayer} />
       console.log(content);
     return content;
 }

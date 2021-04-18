@@ -1,10 +1,8 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import Card from '@material-ui/core/Card';
-import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import Button from '@material-ui/core/Button';
-import Typography from '@material-ui/core/Typography';
 import TextField from '@material-ui/core/TextField';
 
 
@@ -25,16 +23,20 @@ const useStyles = makeStyles({
   },
 });
 
-export default function RegisterPlayer() {
+export default function RegisterPlayer({handleRegisterPlayer}) {
   const classes = useStyles();
-  const bull = <span className={classes.bullet}>•</span>;
 
+  const [playerName, setPlayerName] = useState('');
+  
+  const handleEnterRoom = (e) => {
+    handleRegisterPlayer(playerName)
+  }
 
   return (
     <Card className={classes.root}>
       <CardContent>
-        <TextField id="standard-basic" label="Standard" />
-        <Button variant="contained">Default</Button>
+        <TextField id="standard-basic" label="Standard" onChange={e => setPlayerName(e.target.value)} />
+        <Button variant="contained" onClick={handleEnterRoom}>Default</Button>
       </CardContent>
     </Card>
   );

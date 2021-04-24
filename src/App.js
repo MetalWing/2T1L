@@ -5,9 +5,9 @@ import {
   Route
 } from "react-router-dom";
 
-import Lobby from './components/lobby';
+import CreateRoom from './components/createRoom';
 import Home from './components/home';
-import Room from './components/room';
+import Lobby from './components/lobby';
 
 export default function BasicExample() {
   return (
@@ -16,11 +16,11 @@ export default function BasicExample() {
           <Route exact path="/">
             <Home />
           </Route>
+          <Route path="/createRoom">
+            <CreateRoom />
+          </Route>
           <Route path="/lobby">
             <Lobby />
-          </Route>
-          <Route path="/room">
-            <Room />
           </Route>
         </Switch>
     </Router>

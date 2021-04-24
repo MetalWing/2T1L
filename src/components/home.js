@@ -60,7 +60,7 @@ export default function Home()  {
                         color='primary' 
                         fullWidth={true} 
                         variant='outlined'
-                        onClick={() => routeChange('lobby')}>
+                        onClick={() => routeChange('createRoom')}>
                             <Grid>
                                 <PersonIcon style={{ fontSize: 40 }} /><br />Host
                             </Grid>

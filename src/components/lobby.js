@@ -1,25 +1,17 @@
-import React, { useState, useRef } from 'react';
-import { useHistory } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { useHistory, useLocation } from 'react-router-dom';
+
+import { Grid, Container } from '@material-ui/core';
 
 import { db } from "../services/firebase";
-import md5 from 'md5'
 
-import { Grid, Container, TextField, Button } from '@material-ui/core';
-
-import Switch from '@material-ui/core/Switch';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import PlayArrowIcon from '@material-ui/icons/PlayArrow';
-import ArrowBackIcon from '@material-ui/icons/ArrowBack';
-
-import { makeStyles, withStyles } from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core/styles';
+import RegisterPlayer from './reusable/registerPlayer';
 
 const useStyles = makeStyles((theme) => ({
     input1: {
-        fontSize: 'x-large',
-        color: theme.palette.primary.main
-      },
-      input2: {
-        fontSize: 'x-large',
+        height: 48,
+        fontSize: 'xxx-large',
         color: theme.palette.primary.main
       },
     specialOutline: {
@@ -27,230 +19,82 @@ const useStyles = makeStyles((theme) => ({
     }
   }));
 
-  const BlueSwitch = withStyles({
-    switchBase: {
-      color: '#3f50b5',
-      '&$checked': {
-        color: '#3f50b5',
-      },
-      '&$checked + $track': {
-        backgroundColor: '#3f50b5',
-        opacity: 0.8
-      },
-    },
-    checked: {},
-    track: {},
-  })(Switch);
+  function useQuery() {
+    return new URLSearchParams(useLocation().search);
+  }
 
 export default function Lobby()  {
-    const [hostOnly, setHostOnly] = useState(false);
-    const [name, setName] = useState("");
-    const [statementOneInput, setStatementOneInput] = useState("");
-    const [statementTwoInput, setStatementTwoInput] = useState("");
-    const [statementThreeInput, setStatementThreeInput] = useState("");
-    const [startClicked, setStartClicked] = useState(false);
+    let query = useQuery();
 
-    const nameInputRef = useRef();
-    const statementOneInputRef = useRef();
-    const statementTwoInputRef = useRef();
-    const statementThreeInputRef = useRef();
+    const [fullRoomCode, setFullRoomCode] = useState('');
+    const [roomName, setRoomName] = useState('');
+    const [players, setPlayers] = useState([]);
+    const [roomObj, setRoomObj] = useState();
+    const [playerName, setPlayerName] = useState('');
 
     const history = useHistory();
     const routeChange = (newPath) =>{
         history.push(newPath);
     }
 
-    const handleHostOnlyClicked = () => {
-      setHostOnly((prev) => !prev);
-    };
+    const roomCode = query.get('code');
+    console.log("Got room code", roomCode);
 
-    
-    const validateAndGo = (event) => {
-      setStartClicked(true);
-      let nameInput = (nameInputRef.current.value !== '');
-      let input1 = (statementOneInputRef.current?.value !== '');
-      let input2 = (statementTwoInputRef.current?.value !== '');
-      let input3 = (statementThreeInputRef.current?.value !=='');
-      if (nameInput && ((input1 && input2 && input3) || hostOnly)) {
-        handleSubmit(event).then((roomCode) => {
-          localStorage.setItem("playerName", name);
-          routeChange('room?code=' + roomCode);
-        });
-      }
-    }
+    window.addEventListener("storage",(function(e){
+      console.log("IT CHANGED");
+   }).bind(this));
 
-    const handleSubmit = async(event) => {
-      event.preventDefault();
+    useEffect(() => {
+        getRoomInfo();
+    }, []);
 
-      // Host
-      var playerObject = {
-        [name] : { 
-          lie: statementThreeInput,
-          truth1:statementOneInput,
-          truth2:statementTwoInput}};
-
-      var roomObject = {
-        roomName: 'get this from textfield',
-        hostName: name,
-        timestamp: Date.now(),
-        players:  []
-      };
-
-      if (!hostOnly)
-      {
-        roomObject.players.push(playerObject);
+      const getRoomInfo = () => {
+        console.log("Trying to get room info");
+        try {
+          var rooms = db.ref('rooms');
+            rooms.orderByChild("roomCode").equalTo(roomCode).once("child_added", function(snapshot) {
+                setFullRoomCode(snapshot.key);
+                setRoomName(snapshot.val().roomName);
+                setRoomObj(snapshot.val());
+              });
+          } catch (error) {
+              console.log('Whoops?');
+          }
       }
 
-      try {
-        var key = '';
-        await db.ref('rooms').push(roomObject).then((snapshot) => {
-          key = snapshot.key;
-        });
-        var roomCode = (md5(key)).toString(16).substring(0, 4).toUpperCase();
-        await db.ref('rooms/'+ key).update({
-          roomCode: roomCode,
-        });
-        
-      } catch (error) {
-        console.log('welp...',error.message);
+      const generatePlayerAvatars = () =>{
+        console.log("Room obj", roomObj);
+        const playersHTML = [];
+        for(var key in roomObj?.players) {
+          var value = roomObj?.players[key].name;
+          console.log("value:", value);
+          playersHTML.push(value)
       }
-      return roomCode;
-    }
+        return playersHTML;
+      }
 
-    const classes = useStyles();
-
-    return (
-        <Container maxWidth='md'>
-            <Grid 
-            container
-            spacing={1}
-            alignItems='center'
-            direction='column'
-            justify='center'
-            style={{ minHeight: '100vh', marginTop: '1em', flexWrap: 'nowrap' }}>
-                <Grid item xs={12} style={{width: '100%'}}>
-                <TextField color='primary' type='text' variant='outlined' fullWidth={true} 
-                        InputProps={{
-                        placeholder: 'Room name (optional)',
-                        classes: { 
-                            input: classes.input1,
-                            notchedOutline: classes.specialOutline,
-                            focused: classes.specialOutline
-                        }
-                      }} />
-                </Grid>
-                <Grid item xs={12} style={{width: '100%'}}>
-                  <TextField 
-                  inputRef={nameInputRef} 
-                  error={startClicked && name === ''} 
-                  label={(startClicked && name === '') ? 'Required' : ''}
-                  value={name} onChange={e => setName(e.target.value)}
-                  color='primary' 
-                  type='text' 
-                  variant='outlined' 
-                  fullWidth={true} 
-                        InputProps={{
-                        placeholder: 'Your name',
-                        classes: { 
-                            input: classes.input1,
-                            notchedOutline: classes.specialOutline,
-                            focused: classes.specialOutline
-                        }
-                      }} />
-                </Grid>
-                <Grid item xs={12} style={{width: '100%'}}>
-                  <FormControlLabel classes={{label: classes.input2}} control=
-                  {<BlueSwitch 
-                      checked={hostOnly} classes={classes.switchStyle1}
-                      onChange={handleHostOnlyClicked}
-                      inputProps={{ 'aria-label': 'secondary checkbox' }}
-                  />}  label="HOST ONLY" />
-                </Grid>
-                {!hostOnly && 
-                <Grid item xs={12} style={{width: '100%'}}>
-                  <TextField inputRef={statementOneInputRef}
-                  error={startClicked && statementOneInput === ''} 
-                  label={(startClicked && statementTwoInput === '') ? 'Required' : ''}
-                  value={statementOneInput} onChange={e => setStatementOneInput(e.target.value)}
-                      color='primary' 
-                      type='text' 
-                      multiline 
-                      variant='outlined' 
-                      fullWidth={true} 
-                      InputProps={{
-                      placeholder: 'Statement 1',
-                      classes: { 
-                          input: classes.input1,
-                          notchedOutline: classes.specialOutline,
-                          focused: classes.specialOutline
-                      }
-                  }} />
-                </Grid> }
-                {!hostOnly &&
-                <Grid item xs={12} style={{width: '100%'}}>
-                  <TextField inputRef={statementTwoInputRef}
-                  error={startClicked && statementTwoInput === ''} 
-                  label={(startClicked && statementTwoInput === '') ? 'Required' : ''}
-                  value={statementTwoInput} onChange={e => setStatementTwoInput(e.target.value)}
-                      color='primary'
-                      type='text' 
-                      multiline 
-                      variant='outlined' 
-                      fullWidth={true} 
-                        InputProps={{
-                        placeholder: 'Statement 2',
-                        classes: { 
-                            input: classes.input1,
-                            notchedOutline: classes.specialOutline,
-                            focused: classes.specialOutline
-                        }
-                      }} />
-                </Grid>}
-                {!hostOnly &&
-                <Grid item xs={12} style={{width: '100%'}}>
-                  <TextField inputRef={statementThreeInputRef}
-                  error={startClicked && statementThreeInput === ''} 
-                  label={(startClicked && statementTwoInput === '') ? 'Required' : ''}
-                  value={statementThreeInput} onChange={e => setStatementThreeInput(e.target.value)}
-                  color='primary' 
-                  type='text' 
-                  multiline 
-                  variant='outlined' 
-                  fullWidth={true} 
-                        InputProps={{
-                        placeholder: 'Statement 3',
-                        classes: { 
-                            input: classes.input1,
-                            notchedOutline: classes.specialOutline,
-                            focused: classes.specialOutline
-                        }
-                      }} />
-                </Grid>}
+      var content = 
+      <Container maxWidth='md'>
+              <Grid 
+              container
+              spacing={1}
+              alignItems='center'
+              direction='column'
+              justify='center'
+              style={{ minHeight: '100vh', flexWrap: 'nowrap' }}>
                 <Grid container spacing={1} style={{width: '100%'}}>
-                    <Grid item xs={6}>
-                    <Button 
-                        color='primary' 
-                        fullWidth={true} 
-                        variant='outlined'
-                        onClick={() => routeChange('/')}>
-                            <Grid>
-                                <ArrowBackIcon style={{ fontSize: 40 }} /><br />Back
-                            </Grid>
-                        </Button>
-                    </Grid>
-                    <Grid item xs={6}>
-                    <Button 
-                        color='primary' 
-                        fullWidth={true} 
-                        variant='outlined'
-                        onClick={validateAndGo}>
-                            <Grid>
-                                <PlayArrowIcon style={{ fontSize: 40 }} /><br />Start
-                            </Grid>
-                        </Button>
-                    </Grid>
-                </Grid>
-            </Grid>
-        </Container>
-    );
+                  <Grid item xs={10}>
+                    <h4>Room name: {roomName}</h4>
+                  </Grid>
+                  <Grid item xs={2}>
+                    <h4>Code: {roomCode}</h4>
+                  </Grid>
+                  <Grid item sm={12}>
+                    <h5>Players</h5>
+                    {generatePlayerAvatars()}
+                  </Grid>
+                  </Grid>
+              </Grid>
+      </Container>
+    return content;
 }

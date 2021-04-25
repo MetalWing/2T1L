@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
+import UseQuery from './reusable/useQuery';
 
 import { Grid, Container } from '@material-ui/core';
 
+import PlayerList from './reusable/playerList'
 import { db } from "../services/firebase";
 
 import { makeStyles } from '@material-ui/core/styles';
-import RegisterPlayer from './reusable/registerPlayer';
 
 const useStyles = makeStyles((theme) => ({
     input1: {
@@ -19,14 +20,11 @@ const useStyles = makeStyles((theme) => ({
     }
   }));
 
-  function useQuery() {
-    return new URLSearchParams(useLocation().search);
-  }
-
 export default function Lobby()  {
-    let query = useQuery();
+    let query = UseQuery();
 
     const [fullRoomCode, setFullRoomCode] = useState('');
+    const [loading, isLoading] = useState(true);
     const [roomName, setRoomName] = useState('');
     const [players, setPlayers] = useState([]);
     const [roomObj, setRoomObj] = useState();
@@ -40,27 +38,27 @@ export default function Lobby()  {
     const roomCode = query.get('code');
     console.log("Got room code", roomCode);
 
-    window.addEventListener("storage",(function(e){
-      console.log("IT CHANGED");
-   }).bind(this));
-
     useEffect(() => {
-        getRoomInfo();
-    }, []);
-
-      const getRoomInfo = () => {
-        console.log("Trying to get room info");
-        try {
-          var rooms = db.ref('rooms');
-            rooms.orderByChild("roomCode").equalTo(roomCode).once("child_added", function(snapshot) {
-                setFullRoomCode(snapshot.key);
-                setRoomName(snapshot.val().roomName);
-                setRoomObj(snapshot.val());
+        async function fetchRoom() {
+          try {
+            await db.ref('rooms').orderByChild("roomCode").equalTo(roomCode).once("value", function(snapshot) {
+                const key = Object.keys(snapshot.val())[0];
+                const roomObject = snapshot.val()[key];
+                setFullRoomCode(Object.keys(snapshot.val())[0]);
+                console.log("Lobby code", Object.keys(snapshot.val())[0]);
+                setRoomName(roomObject.roomName);
+                setRoomObj(roomObject);
+                console.log("Room obj", roomObject);
               });
-          } catch (error) {
-              console.log('Whoops?');
-          }
-      }
+            } catch (error) {
+                console.log('Whoops?');
+            }
+        };
+    
+        fetchRoom().then(() => {
+          isLoading(false);
+        })
+    }, []);
 
       const generatePlayerAvatars = () =>{
         console.log("Room obj", roomObj);
@@ -68,11 +66,13 @@ export default function Lobby()  {
         for(var key in roomObj?.players) {
           var value = roomObj?.players[key].name;
           console.log("value:", value);
-          playersHTML.push(value)
+          const html = <p>{value}</p>
+          playersHTML.push(html)
       }
         return playersHTML;
       }
 
+      console.log("Loading", loading);
       var content = 
       <Container maxWidth='md'>
               <Grid 
@@ -91,7 +91,8 @@ export default function Lobby()  {
                   </Grid>
                   <Grid item sm={12}>
                     <h5>Players</h5>
-                    {generatePlayerAvatars()}
+                    {/* {generatePlayerAvatars()} */}
+                    {!loading && <PlayerList roomRef={fullRoomCode} />}
                   </Grid>
                   </Grid>
               </Grid>

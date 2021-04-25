@@ -8,6 +8,7 @@ import {
 import CreateRoom from './components/createRoom';
 import Home from './components/home';
 import Lobby from './components/lobby';
+import Join from './components/join';
 
 export default function BasicExample() {
   return (
@@ -21,6 +22,9 @@ export default function BasicExample() {
           </Route>
           <Route path="/lobby">
             <Lobby />
+          </Route>
+          <Route path="/join">
+            <Join />
           </Route>
         </Switch>
     </Router>

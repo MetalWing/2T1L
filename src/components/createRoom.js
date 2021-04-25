@@ -124,7 +124,7 @@ export default function CreateRoom()  {
         {
           await db.ref('rooms/'+ key + '/players').push(playerObject).then((playerSnapshot) => {
             console.log("Pushing player. Ref:", playerSnapshot.key);
-            localStorage.setItem('playerName', roomCode + playerSnapshot.key);
+            localStorage.setItem('pInfo', roomCode + playerSnapshot.key);
           });
         }
         

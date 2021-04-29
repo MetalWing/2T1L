@@ -1,120 +1,89 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { makeStyles } from '@material-ui/core/styles';
+import React, { useState, useEffect } from 'react';
+import { useHistory } from 'react-router-dom';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
+import { Grid, Container } from '@material-ui/core';
 
 import UseQuery from './reusable/useQuery';
 import { db } from "../services/firebase";
-
-
-const useStyles = makeStyles({
-  root: {
-    minWidth: 275,
-  },
-  bullet: {
-    display: 'inline-block',
-    margin: '0 2px',
-    transform: 'scale(0.8)',
-  },
-  title: {
-    fontSize: 14,
-  },
-  pos: {
-    marginBottom: 12,
-  },
-});
+import RegisterPlayerForm from './reusable/registerPlayerForm';
 
 export default function Join() {
-  const classes = useStyles();
+  const [snapshot, setSnapshot] = useState();
+  const [showRegisterPlayerForm, setShowRegisterPlayerForm] = useState(false);
 
-  const [playerName, setPlayerName] = useState('');
-  
-  const handleEnterRoom = async(e) => {
-    var playerObject = {
-      name: playerName,
-      lie: 'statementThreeInput',
-      truth1:'statementOneInput',
-      truth2:'statementTwoInput'
-    };
-
-    var rooms = db.ref('rooms');
-    let fullRoomCode = ''
-    db.ref('rooms').orderByChild("roomCode").equalTo(roomCode).once("child_added", function(snapshot) {
-        console.log("Full room code", snapshot.key);
-        fullRoomCode = snapshot.key;
-      }).then((s) => {
-        db.ref('rooms/'+ fullRoomCode + '/players/').push(playerObject).then((playerSnapshot) => {
-          console.log("Pushing player. Ref:", playerSnapshot.key);
-          localStorage.setItem('pInfo', roomCode + playerSnapshot.key);
-        });
-      });
-
-    
-  }
-
-  useEffect(() => {
-    // Check URL - it should have a room code
-    // If it doesn't - just show an error message or something
-
-    //  Check local storage for playerInfo - get room code and player name from it
-    
-    // Handle re-joining player
-    // If the room code matches the URL ... player is probably re-joining
-    // Get their name from the localStorage as well and if it exists in the room - put them in the lobby/game
-
-    // If local storage is empty or room code doesn't match - we are joining a new game. Wipe playerInfo in localStorage
-    // Get the player name & statements
-    // Push them to DB - store the room code/player name in localStorage
-    // Redirect to lobby
-  }, []);
 
   let query = UseQuery();
   const roomCode = query.get('code');
-  let pageContent = '';
 
-  if (!roomCode || roomCode === '')
-  {
-    // They are joining without a code... in the future - let them enter code, but for now - error!
-    console.log('No room code - no lobby! >:(');
-    pageContent = <div>No room code - no lobby! {'>'}:(</div>
+  const history = useHistory();
+  const routeChange = (newPath) =>{
+      history.push(newPath);
   }
-  else {
-    const pInfo = localStorage.getItem('pInfo');
-    let pInfoRoomCode, pInfoName = '';
-    if (pInfo)
-    {
-      pInfoRoomCode = pInfo.substring(0,4);
-      pInfoName = pInfo.substring(4, pInfo.length);
 
-      if (roomCode === pInfoRoomCode)
-      {
-        // If roomCode == pInfoRoomCode - rejoining player!
-        // Otherwise...
-        console.log('Rejoining, eh? Tough luck.. not implemented yet lol');
-      }
-      else
-      {
-        localStorage.setItem('pInfo', '');
-      }
+  const getRoomInfo = async () => {
+    const dbRef = 'rooms';
+    await db.ref('rooms').orderByChild("roomCode").equalTo(roomCode).once("child_added").then((s) => {
+      db.ref('rooms').child(s.key).get().then((snapshot) => {
+        if (snapshot.exists()) {
+          setSnapshot(snapshot);
+        } else {
+          console.log("No data available");
+        }
+      }).catch((error) => {
+        console.error(error);
+      });
+    });
+  };
+
+  if (!snapshot) getRoomInfo();
+
+  const pInfo = localStorage.getItem('pInfo');
+  let pInfoRoomCode, pInfoName = '';
+  if (pInfo) {
+    pInfoRoomCode = pInfo.substring(0, 4);
+    pInfoName = pInfo.substring(4, pInfo.length);
+
+    if (roomCode === pInfoRoomCode) {
+      // If roomCode == pInfoRoomCode - rejoining player!
+      // Otherwise...
+      console.log('Rejoining, eh? Tough luck.. not implemented yet lol');
     }
-
-    // This will be either undefined (no pInfo) or blank as it was reset in the code above
-    // if (!pInfo || pInfo === '')
-    {
-      // Great - they want to join! Show them the form with name/statements.
-      pageContent = (
-        <Card className={classes.root}>
-          <CardContent>
-            <TextField id="standard-basic" label="Standard" onChange={e => setPlayerName(e.target.value)} />
-            <Button variant="contained" onClick={handleEnterRoom}>Join</Button>
-          </CardContent>
-        </Card>
-      );
+    else {
+      localStorage.setItem('pInfo', '');
     }
   }
 
+  // This will be either undefined (no pInfo) or blank as it was reset in the code above
+  if ((!pInfo || pInfo === '') && !showRegisterPlayerForm) {
+    // Great - they want to join! Show them the form with name/statements.
+    setShowRegisterPlayerForm(true);
+  }
 
-  return pageContent;
+  const handleJoin = (playerObject) => {
+    console.log("join clicked!", playerObject);
+    db.ref('rooms/' + snapshot.key + '/players/').push(playerObject).then((playerSnapshot) => {
+      console.log("Pushing player. Ref:", playerSnapshot.key);
+      localStorage.setItem('pInfo', roomCode + playerSnapshot.key);
+      routeChange('lobby?code='+roomCode);
+    });
+  }
+
+  return (snapshot) ?
+    <Container maxWidth='md'>
+      <Grid
+        container
+        spacing={1}
+        alignItems='center'
+        direction='column'
+        justify='center'
+        style={{ minHeight: '100vh', marginTop: '1em', flexWrap: 'nowrap' }}>
+        <Grid item xs={12} style={{ width: '100%' }}>
+          You are joining {snapshot.val().roomName} [{snapshot.val().roomCode}]
+            {showRegisterPlayerForm && <RegisterPlayerForm handleJoin={handleJoin} />}
+        </Grid>
+      </Grid>
+    </Container> : <div>lol</div>;
 }

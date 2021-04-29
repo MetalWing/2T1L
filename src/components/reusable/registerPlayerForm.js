@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { useHistory } from 'react-router-dom';
 
-import { db } from "../services/firebase";
+import { db } from "../../services/firebase";
 import md5 from 'md5'
 
 import { Grid, Container, TextField, Button } from '@material-ui/core';
@@ -27,25 +26,8 @@ const useStyles = makeStyles((theme) => ({
     }
   }));
 
-  const BlueSwitch = withStyles({
-    switchBase: {
-      color: '#3f50b5',
-      '&$checked': {
-        color: '#3f50b5',
-      },
-      '&$checked + $track': {
-        backgroundColor: '#3f50b5',
-        opacity: 0.8
-      },
-    },
-    checked: {},
-    track: {},
-  })(Switch);
-
-export default function CreateRoom()  {
-    const [hostOnly, setHostOnly] = useState(false);
+export default function RegisterPlayerForm(props)  {
     const [name, setName] = useState('');
-    const [roomName, setRoomName] = useState('')
     const [statementOneInput, setStatementOneInput] = useState('');
     const [statementTwoInput, setStatementTwoInput] = useState('');
     const [statementThreeInput, setStatementThreeInput] = useState('');
@@ -55,85 +37,20 @@ export default function CreateRoom()  {
     const statementOneInputRef = useRef();
     const statementTwoInputRef = useRef();
     const statementThreeInputRef = useRef();
-
-    const history = useHistory();
-    const routeChange = (newPath) =>{
-        history.push(newPath);
-    }
-
-    const handleHostOnlyClicked = () => {
-      setHostOnly((prev) => !prev);
-    };
-
     
     const validateAndGo = (event) => {
-      setStartClicked(true);
       let nameInput = (nameInputRef.current.value !== '');
       let input1 = (statementOneInputRef.current?.value !== '');
       let input2 = (statementTwoInputRef.current?.value !== '');
       let input3 = (statementThreeInputRef.current?.value !=='');
-      if (nameInput && ((input1 && input2 && input3) || hostOnly)) {
-        handleSubmit(event).then((roomCode) => {
-          routeChange('lobby?code=' + roomCode);
-        });
+      if (nameInput && input1 && input2 && input3) {
+        var playerObject = {
+            name: name,
+            lie: statementThreeInput,
+            truth1:statementOneInput,
+            truth2:statementTwoInput};
+            props.handleJoin(playerObject);
       }
-    }
-
-    const handleSubmit = async(event) => {
-      event.preventDefault();
-
-      // Host
-      var playerObject = {
-          name: name,
-          lie: statementThreeInput,
-          truth1:statementOneInput,
-          truth2:statementTwoInput};
-
-      var roomObject = {
-        roomName: roomName,
-        hostName: '',
-        timestamp: Date.now(),
-        players:  []
-      };
-
-      // if (!hostOnly)
-      // {
-      //   let playerRef = roomObject.players.push(playerObject);
-      //   console.log("Pushing player. Ref:", playerRef.key);
-      // }
-
-      try {
-        // Set key to blank
-        var key = '';
-
-        // Create the room in DB using roomObject and store the unique key value
-        await db.ref('rooms').push(roomObject).then((snapshot) => {
-          key = snapshot.key;
-        });
-
-        // Generate 4 character room code from the key
-        var roomCode = (md5(key)).toString(16).substring(0, 4).toUpperCase();
-
-        // Update the room in DB with the room code
-        await db.ref('rooms/'+ key).update({
-          roomCode: roomCode,
-        });
-
-        // Add the player to the room and store the unique reference to localStorage
-        if (!hostOnly)
-        {
-          await db.ref('rooms/'+ key + '/players').push(playerObject).then((playerSnapshot) => {
-            console.log("Pushing player. Ref:", playerSnapshot.key);
-            console.log('rooms/' + key + '/hostName');
-            db.ref('rooms/' + key + '/hostName').set(playerSnapshot.key);
-            localStorage.setItem('pInfo', roomCode + playerSnapshot.key);
-          });
-        }
-        
-      } catch (error) {
-        console.log('welp...',error.message);
-      }
-      return roomCode;
     }
 
     const classes = useStyles();
@@ -147,18 +64,6 @@ export default function CreateRoom()  {
             direction='column'
             justify='center'
             style={{ minHeight: '100vh', marginTop: '1em', flexWrap: 'nowrap' }}>
-                <Grid item xs={12} style={{width: '100%'}}>
-                <TextField color='primary' type='text' variant='outlined' fullWidth={true} 
-                  value={roomName} onChange={e => setRoomName(e.target.value)}
-                        InputProps={{
-                        placeholder: 'Room name (optional)',
-                        classes: { 
-                            input: classes.input1,
-                            notchedOutline: classes.specialOutline,
-                            focused: classes.specialOutline
-                        }
-                      }} />
-                </Grid>
                 <Grid item xs={12} style={{width: '100%'}}>
                   <TextField 
                   inputRef={nameInputRef} 
@@ -179,15 +84,6 @@ export default function CreateRoom()  {
                       }} />
                 </Grid>
                 <Grid item xs={12} style={{width: '100%'}}>
-                  <FormControlLabel classes={{label: classes.input2}} control=
-                  {<BlueSwitch 
-                      checked={hostOnly} classes={classes.switchStyle1}
-                      onChange={handleHostOnlyClicked}
-                      inputProps={{ 'aria-label': 'secondary checkbox' }}
-                  />}  label="HOST ONLY" />
-                </Grid>
-                {!hostOnly && 
-                <Grid item xs={12} style={{width: '100%'}}>
                   <TextField inputRef={statementOneInputRef}
                   error={startClicked && statementOneInput === ''} 
                   label={(startClicked && statementTwoInput === '') ? 'Required' : ''}
@@ -205,8 +101,7 @@ export default function CreateRoom()  {
                           focused: classes.specialOutline
                       }
                   }} />
-                </Grid> }
-                {!hostOnly &&
+                </Grid>
                 <Grid item xs={12} style={{width: '100%'}}>
                   <TextField inputRef={statementTwoInputRef}
                   error={startClicked && statementTwoInput === ''} 
@@ -225,8 +120,7 @@ export default function CreateRoom()  {
                             focused: classes.specialOutline
                         }
                       }} />
-                </Grid>}
-                {!hostOnly &&
+                </Grid>
                 <Grid item xs={12} style={{width: '100%'}}>
                   <TextField inputRef={statementThreeInputRef}
                   error={startClicked && statementThreeInput === ''} 
@@ -245,27 +139,16 @@ export default function CreateRoom()  {
                             focused: classes.specialOutline
                         }
                       }} />
-                </Grid>}
+                </Grid>
                 <Grid container spacing={1} style={{width: '100%'}}>
-                    <Grid item xs={6}>
-                    <Button 
-                        color='primary' 
-                        fullWidth={true} 
-                        variant='outlined'
-                        onClick={() => routeChange('/')}>
-                            <Grid>
-                                <ArrowBackIcon style={{ fontSize: 40 }} /><br />Back
-                            </Grid>
-                        </Button>
-                    </Grid>
-                    <Grid item xs={6}>
+                    <Grid item xs={12}>
                     <Button 
                         color='primary' 
                         fullWidth={true} 
                         variant='outlined'
                         onClick={validateAndGo}>
                             <Grid>
-                                <PlayArrowIcon style={{ fontSize: 40 }} /><br />Start
+                                <PlayArrowIcon style={{ fontSize: 40 }} /><br />Join
                             </Grid>
                         </Button>
                     </Grid>

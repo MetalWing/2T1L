@@ -45,6 +45,7 @@ export default function RegisterPlayerForm(props)  {
       let input3 = (statementThreeInputRef.current?.value !=='');
       if (nameInput && input1 && input2 && input3) {
         var playerObject = {
+            connected: true,
             name: name,
             lie: statementThreeInput,
             truth1:statementOneInput,

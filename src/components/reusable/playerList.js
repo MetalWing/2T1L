@@ -14,9 +14,9 @@ export default function PlayerList(props) {
             <React.Fragment>
                 <span>
                 List:{' '}
-                {snapshots.map((v) => (
-                    <React.Fragment key={v.key}>{v.val().name}, </React.Fragment>
-                ))}
+                {snapshots.map((v) => {
+                    return (v.val().connected) ? <React.Fragment key={v.key}>{v.val().name}, </React.Fragment> : ''
+                })}
                 </span>
             </React.Fragment>
             )}

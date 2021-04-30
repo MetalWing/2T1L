@@ -84,6 +84,7 @@ export default function CreateRoom()  {
 
       // Host
       var playerObject = {
+          connected: true,
           name: name,
           lie: statementThreeInput,
           truth1:statementOneInput,
@@ -91,6 +92,7 @@ export default function CreateRoom()  {
 
       var roomObject = {
         roomName: roomName,
+        gameInProgress: false,
         hostName: '',
         timestamp: Date.now(),
         players:  []

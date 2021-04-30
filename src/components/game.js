@@ -5,7 +5,6 @@ import UseQuery from './reusable/useQuery';
 import { Grid, Container, Button } from '@material-ui/core';
 
 import PlayerList from './reusable/playerList'
-import Game from './game';
 import { db } from "../services/firebase";
 
 import { makeStyles } from '@material-ui/core/styles';
@@ -22,12 +21,11 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
-export default function Lobby() {
+export default function Game() {
   let query = UseQuery();
 
   const [roomSnapshot, setRoomSnapshot] = useState();
   const [playerIsHost, setPlayerIsHost] = useState('');
-  const [gameStart, setGameStart] = useState(false);
 
   const history = useHistory();
   const routeChange = (newPath) => {
@@ -47,12 +45,6 @@ export default function Lobby() {
             const pInfo = localStorage.getItem('pInfo');
             const playerName = pInfo?.substring(4, pInfo.length);
             var presenceRef = db.ref(`rooms/${snapshot.key}/players/${playerName}/connected`);
-            presenceRef.set(true);
-            db.ref(`rooms/${snapshot.key}/gameInProgress`).on('value', (snapshot) => {
-              const dbGameInProgress = snapshot.val();
-              console.log("dbGameInProgress", dbGameInProgress);
-              if (dbGameInProgress) setGameStart(true);
-            });
             // Write a string when this client loses connection
             presenceRef.onDisconnect().set(false);
 
@@ -69,13 +61,6 @@ export default function Lobby() {
     fetchRoom();
   }, []);
 
-console.log("gamestart", gameStart);
-
-  const handleStartGame = () => {
-    console.log("Start pls?");
-    db.ref(`rooms/${roomSnapshot.key}/gameInProgress`).set(true);
-  }
-
   // const generatePlayerAvatars = () => {
   //   console.log("Room obj", roomObj);
   //   const playersHTML = [];
@@ -87,9 +72,7 @@ console.log("gamestart", gameStart);
   //   }
   //   return playersHTML;
   // }
-
-  if (gameStart) return <Game />
-
+  
   var content =
     <Container maxWidth='md'>
       {roomSnapshot ? <Grid
@@ -101,6 +84,7 @@ console.log("gamestart", gameStart);
         style={{ minHeight: '100vh', flexWrap: 'nowrap' }}>
         <Grid container spacing={1} style={{ width: '100%' }}>
           <Grid item xs={10}>
+            <h1>ITS HAPPENING!!</h1>
             <h4>Room name: {roomSnapshot.val().roomName}</h4>
           </Grid>
           <Grid item xs={2}>
@@ -117,7 +101,7 @@ console.log("gamestart", gameStart);
             color='primary' 
             fullWidth={true} 
             variant='outlined'
-            onClick={handleStartGame}>
+            onClick={() => ({})}>
                 <Grid>
                     <PlayArrowIcon style={{ fontSize: 40 }} /><br />Begin!
                 </Grid>

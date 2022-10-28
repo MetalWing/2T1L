@@ -10,6 +10,7 @@ import Home from './components/home';
 import Lobby from './components/lobby';
 import Join from './components/join';
 
+// Test comment.
 export default function BasicExample() {
   return (
     <Router>
